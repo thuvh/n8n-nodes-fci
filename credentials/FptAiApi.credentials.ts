@@ -5,31 +5,32 @@ import {
 	INodeProperties,
 } from 'n8n-workflow';
 
-export class ExampleCredentialsApi implements ICredentialType {
-	name = 'exampleCredentialsApi';
-	displayName = 'Example Credentials API';
+export class FptAiApi implements ICredentialType {
+	name = 'fptAiApi';
 
-	documentationUrl = 'https://your-docs-url';
+	displayName = 'FPT AI API';
+
+	documentationUrl = 'https://github.com/fpt-corp/ai-marketplace';
 
 	properties: INodeProperties[] = [
 		// The credentials to get from user and save encrypted.
 		// Properties can be defined exactly in the same way
 		// as node properties.
 		{
-			displayName: 'User Name',
-			name: 'username',
+			displayName: 'API Key',
+			name: 'apiKey',
 			type: 'string',
+			typeOptions: { password: true },
+			required: true,
 			default: '',
 		},
 		{
-			displayName: 'Password',
-			name: 'password',
+			displayName: 'Base URL',
+			name: 'url',
 			type: 'string',
-			typeOptions: {
-				password: true,
-			},
-			default: '',
-		},
+			default: 'https://mkp-api.fptcloud.com/v1',
+			description: 'Override the default base URL for the API',
+		}
 	];
 
 	// This credential is currently not used by any node directly
@@ -38,22 +39,17 @@ export class ExampleCredentialsApi implements ICredentialType {
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
 		properties: {
-			auth: {
-				username: '={{ $credentials.username }}',
-				password: '={{ $credentials.password }}',
-			},
-			qs: {
-				// Send this as part of the query string
-				n8n: 'rocks',
-			},
+			headers: {
+				Authorization: '=Bearer {{$credentials.apiKey}}',
+			}
 		},
 	};
 
 	// The block below tells how this credential can be tested
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: 'https://example.com/',
-			url: '',
+			baseURL: '={{$credentials?.url}}',
+			url: '/models',
 		},
 	};
 }
