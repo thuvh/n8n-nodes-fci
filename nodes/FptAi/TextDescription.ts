@@ -2,7 +2,7 @@ import type { INodeExecutionData, INodeProperties } from 'n8n-workflow';
 
 import { sendErrorPostReceive } from './GenericFunctions';
 
-export const chatOperations: INodeProperties[] = [
+export const textOperations: INodeProperties[] = [
 	{
 		displayName: 'Operation',
 		name: 'operation',
@@ -10,7 +10,7 @@ export const chatOperations: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: {
 			show: {
-				resource: ['chat'],
+				resource: ['text'],
 			},
 		},
 		options: [
@@ -22,7 +22,33 @@ export const chatOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '/v1/chat/completions',
+						url: '/v1/completions',
+					},
+					output: { postReceive: [sendErrorPostReceive] },
+				},
+			},
+			{
+				name: 'Edit',
+				value: 'edit',
+				action: 'Create an edit',
+				description: 'Create an edited version for a given text',
+				routing: {
+					request: {
+						method: 'POST',
+						url: '/v1/edits',
+					},
+					output: { postReceive: [sendErrorPostReceive] },
+				},
+			},
+			{
+				name: 'Moderate',
+				value: 'moderate',
+				action: 'Create a moderation',
+				description: "Classify if a text violates OpenAI's content policy",
+				routing: {
+					request: {
+						method: 'POST',
+						url: '/v1/moderations',
 					},
 					output: { postReceive: [sendErrorPostReceive] },
 				},
@@ -42,64 +68,7 @@ const completeOperations: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				operation: ['complete'],
-				resource: ['chat'],
-				'@version': [1],
-			},
-		},
-		typeOptions: {
-			loadOptions: {
-				routing: {
-					request: {
-						method: 'GET',
-						url: '/v1/models',
-					},
-					output: {
-						postReceive: [
-							{
-								type: 'rootProperty',
-								properties: {
-									property: 'data',
-								},
-							},
-							{
-								type: 'setKeyValue',
-								properties: {
-									name: '={{$responseItem.id}}',
-									value: '={{$responseItem.id}}',
-								},
-							},
-							{
-								type: 'sort',
-								properties: {
-									key: 'id',
-								},
-							},
-						],
-					},
-				},
-			},
-		},
-		routing: {
-			send: {
-				type: 'body',
-				property: 'model',
-			},
-		},
-		default: '',
-	},
-	{
-		displayName: 'Model',
-		name: 'chatModel',
-		type: 'options',
-		description:
-			'The model which will generate the completion. <a href="https://beta.openai.com/docs/models/overview">Learn more</a>.',
-		displayOptions: {
-			show: {
-				operation: ['complete'],
-				resource: ['chat'],
-			},
-			hide: {
-				'@version': [1],
+				resource: ['text'],
 			},
 		},
 		typeOptions: {
@@ -146,60 +115,185 @@ const completeOperations: INodeProperties[] = [
 	{
 		displayName: 'Prompt',
 		name: 'prompt',
-		type: 'fixedCollection',
-		typeOptions: {
-			sortable: true,
-			multipleValues: true,
-		},
+		type: 'string',
+		description: 'The prompt to generate completion(s) for',
+		placeholder: 'e.g. Say this is a test',
 		displayOptions: {
 			show: {
-				resource: ['chat'],
+				resource: ['text'],
 				operation: ['complete'],
 			},
 		},
-		placeholder: 'Add Message',
-		default: {},
+		default: '',
+		typeOptions: {
+			rows: 2,
+		},
+		routing: {
+			send: {
+				type: 'body',
+				property: 'prompt',
+			},
+		},
+	},
+];
+
+const editOperations: INodeProperties[] = [
+	{
+		displayName: 'Model',
+		name: 'model',
+		type: 'options',
+		description:
+			'The model which will generate the edited version. <a href="https://beta.openai.com/docs/models/overview">Learn more</a>.',
+		displayOptions: {
+			show: {
+				operation: ['edit'],
+				resource: ['text'],
+			},
+		},
 		options: [
 			{
-				displayName: 'Messages',
-				name: 'messages',
-				values: [
-					{
-						displayName: 'Role',
-						name: 'role',
-						type: 'options',
-						options: [
-							{
-								name: 'Assistant',
-								value: 'assistant',
-							},
-							{
-								name: 'System',
-								value: 'system',
-							},
-							{
-								name: 'User',
-								value: 'user',
-							},
-						],
-						default: 'user',
-					},
-					{
-						displayName: 'Content',
-						name: 'content',
-						type: 'string',
-						default: '',
-					},
-				],
+				name: 'code-davinci-edit-001',
+				value: 'code-davinci-edit-001',
+			},
+			{
+				name: 'text-davinci-edit-001',
+				value: 'text-davinci-edit-001',
 			},
 		],
 		routing: {
 			send: {
 				type: 'body',
-				property: 'messages',
-				value: '={{ $value.messages }}',
+				property: 'model',
 			},
 		},
+		default: 'text-davinci-edit-001',
+	},
+	{
+		displayName: 'Input',
+		name: 'input',
+		type: 'string',
+		placeholder: 'e.g. What day of the wek is it?',
+		description: 'The input text to be edited',
+		displayOptions: {
+			show: {
+				resource: ['text'],
+				operation: ['edit'],
+			},
+		},
+		default: '',
+		routing: {
+			send: {
+				type: 'body',
+				property: 'input',
+			},
+		},
+	},
+	{
+		displayName: 'Instruction',
+		name: 'instruction',
+		type: 'string',
+		placeholder: 'e.g. Fix the spelling mistakes',
+		description: 'The instruction that tells the model how to edit the input text',
+		displayOptions: {
+			show: {
+				resource: ['text'],
+				operation: ['edit'],
+			},
+		},
+		default: '',
+		routing: {
+			send: {
+				type: 'body',
+				property: 'instruction',
+			},
+		},
+	},
+];
+
+const moderateOperations: INodeProperties[] = [
+	{
+		displayName: 'Model',
+		name: 'model',
+		type: 'options',
+		description:
+			'The model which will classify the text. <a href="https://beta.openai.com/docs/models/overview">Learn more</a>.',
+		displayOptions: {
+			show: {
+				resource: ['text'],
+				operation: ['moderate'],
+			},
+		},
+		options: [
+			{
+				name: 'text-moderation-stable',
+				value: 'text-moderation-stable',
+			},
+			{
+				name: 'text-moderation-latest',
+				value: 'text-moderation-latest',
+			},
+		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'model',
+			},
+		},
+		default: 'text-moderation-latest',
+	},
+	{
+		displayName: 'Input',
+		name: 'input',
+		type: 'string',
+		placeholder: 'e.g. My cat is adorable ❤️❤️',
+		description: 'The input text to classify',
+		displayOptions: {
+			show: {
+				resource: ['text'],
+				operation: ['moderate'],
+			},
+		},
+		default: '',
+		routing: {
+			send: {
+				type: 'body',
+				property: 'input',
+			},
+		},
+	},
+
+	{
+		displayName: 'Simplify',
+		name: 'simplifyOutput',
+		type: 'boolean',
+		default: true,
+		displayOptions: {
+			show: {
+				operation: ['moderate'],
+				resource: ['text'],
+			},
+		},
+		routing: {
+			output: {
+				postReceive: [
+					{
+						type: 'set',
+						enabled: '={{$value}}',
+						properties: {
+							value: '={{ { "data": $response.body.results } }}',
+						},
+					},
+					{
+						type: 'rootProperty',
+						enabled: '={{$value}}',
+						properties: {
+							property: 'data',
+						},
+					},
+				],
+			},
+		},
+		description: 'Whether to return a simplified version of the response instead of the raw data',
 	},
 ];
 
@@ -211,8 +305,8 @@ const sharedOperations: INodeProperties[] = [
 		default: true,
 		displayOptions: {
 			show: {
-				operation: ['complete'],
-				resource: ['chat'],
+				operation: ['complete', 'edit'],
+				resource: ['text'],
 			},
 		},
 		routing: {
@@ -240,7 +334,7 @@ const sharedOperations: INodeProperties[] = [
 							return {
 								json: {
 									...item.json,
-									message: item.json.message,
+									text: (item.json.text as string).trim(),
 								},
 							};
 						});
@@ -260,8 +354,8 @@ const sharedOperations: INodeProperties[] = [
 		default: {},
 		displayOptions: {
 			show: {
-				operation: ['complete'],
-				resource: ['chat'],
+				operation: ['complete', 'edit'],
+				resource: ['text'],
 			},
 		},
 		options: [
@@ -383,14 +477,24 @@ const sharedOperations: INodeProperties[] = [
 	},
 ];
 
-export const chatFields: INodeProperties[] = [
+export const textFields: INodeProperties[] = [
 	/* -------------------------------------------------------------------------- */
-	/*                               chat:complete                        */
+	/*                               text:complete                        */
 	/* -------------------------------------------------------------------------- */
 	...completeOperations,
 
 	/* -------------------------------------------------------------------------- */
-	/*                                chat:ALL                                    */
+	/*                                text:edit                             */
+	/* -------------------------------------------------------------------------- */
+	...editOperations,
+
+	/* -------------------------------------------------------------------------- */
+	/*                                text:moderate                       */
+	/* -------------------------------------------------------------------------- */
+	...moderateOperations,
+
+	/* -------------------------------------------------------------------------- */
+	/*                                text:ALL                                    */
 	/* -------------------------------------------------------------------------- */
 	...sharedOperations,
 ];

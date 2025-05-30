@@ -2,28 +2,26 @@ import type {
 	INodeType,
 	INodeTypeDescription
 } from 'n8n-workflow';
-import { nodeConnectionTypes } from 'n8n-workflow';
+// import { NodeConnectionType } from 'n8n-workflow';
 
 import { chatFields, chatOperations } from './ChatDescription';
 import { imageFields, imageOperations } from './ImageDescription';
-// import { textFields, textOperations } from './TextDescription';
-// import { oldVersionNotice } from '../../utils/descriptions';
+import { textFields, textOperations } from './TextDescription';
 
 export class FptAi implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'FptAI',
+		displayName: 'FptAi',
 		name: 'fptAi',
-		hidden: true,
 		icon: { light: 'file:openAi.svg', dark: 'file:openAi.dark.svg' },
 		group: ['transform'],
 		version: 1,
-		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+		// subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Consume FPT Market Place',
 		defaults: {
 			name: 'FptAI',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		inputs: ['main'],
+		outputs: ['main'],
 		credentials: [
 			{
 				name: 'fptAiApi',
@@ -33,40 +31,40 @@ export class FptAi implements INodeType {
 		requestDefaults: {
 			ignoreHttpStatusErrors: true,
 			baseURL:
-				'={{ $credentials.url?.split("/").slice(0,-1).join("/") ?? "https://github.com/fpt-corp/ai-marketplace" }}',
+				'={{ $credentials.url?.split("/").slice(0,-1).join("/") ?? "https://mkp-api.fptcloud.com" }}',
 		},
 		properties: [
-			// oldVersionNotice,
-			// {
-			// 	displayName: 'Resource',
-			// 	name: 'resource',
-			// 	type: 'options',
-			// 	noDataExpression: true,
-			// 	options: [
-			// 		{
-			// 			name: 'Chat',
-			// 			value: 'chat',
-			// 		},
-			// 		{
-			// 			name: 'Image',
-			// 			value: 'image',
-			// 		},
-			// 		{
-			// 			name: 'Text',
-			// 			value: 'text',
-			// 		},
-			// 	],
-			// 	default: 'text',
-			// },
+
+			{
+				displayName: 'Resource',
+				name: 'resource',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{
+						name: 'Chat',
+						value: 'chat',
+					},
+					{
+						name: 'Image',
+						value: 'image',
+					},
+					{
+						name: 'Text',
+						value: 'text',
+					},
+				],
+				default: 'text',
+			},
 
 			...chatOperations,
 			...chatFields,
 
-			// ...imageOperations,
-			// ...imageFields,
+			...imageOperations,
+			...imageFields,
 
-			// ...textOperations,
-			// ...textFields,
+			...textOperations,
+			...textFields,
 		],
 	};
 }

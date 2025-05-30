@@ -88,12 +88,6 @@ const createOperations: INodeProperties[] = [
 								},
 							},
 							{
-								type: 'filter',
-								properties: {
-									pass: "={{ $responseItem.id.startsWith('dall-') }}",
-								},
-							},
-							{
 								type: 'setKeyValue',
 								properties: {
 									name: '={{$responseItem.id}}',
@@ -144,12 +138,6 @@ const createOperations: INodeProperties[] = [
 								type: 'rootProperty',
 								properties: {
 									property: 'data',
-								},
-							},
-							{
-								type: 'filter',
-								properties: {
-									pass: "={{ $responseItem.id.startsWith('dall-') }}",
 								},
 							},
 							{
